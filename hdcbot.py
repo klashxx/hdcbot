@@ -1,11 +1,14 @@
 """
 HDCBot
 """
-import time
 import logging
+import time
 
 import tweepy
+import yaml
 from decouple import config
+
+CONFIG = './config.yml'
 
 class StreamListener(tweepy.StreamListener):
     def __init__(self, api, logger):
@@ -19,6 +22,9 @@ class StreamListener(tweepy.StreamListener):
         if status_code == 420:
             return False
 
+def get_config(config_file):
+    with open(config_file) as stream:
+        return yaml.load(stream)
 
 def get_logger():
     logger = logging.getLogger('hdcbot')
@@ -45,9 +51,6 @@ def tweet_processor(api, tweet):
         tweet.favorite_count
     )
 
-    if tweet.possibly_sensitive:
-        return True
-
     if not tweet.retweeted and tweet.retweet_count > 5:
         try:
             api.retweet(tweet.id)
@@ -65,6 +68,21 @@ def tweet_processor(api, tweet):
             logger.info('tweet favorited!')
 
     return True
+
+def process_wath_list(api, watch_list):
+    logger = logging.getLogger('hdcbot')
+
+    for screen_name in watch_list:
+        logger.info('processing watch user: %s', screen_name)
+        try:
+            last_tweets = api.user_timeline(screen_name=screen_name, count=3)
+        except tweepy.TweepError:
+            logger.error('unable to get user timeline')
+            continue
+
+        for tweet in last_tweets:
+            tweet_processor(api, tweet)
+
 
 
 def process_followers(api, last_count=0):
@@ -118,7 +136,10 @@ def get_api(logger):
 def main():
     num_followers = 0
     logger = get_logger()
+    config_file = get_config(CONFIG)
     api = get_api(logger)
+
+    process_wath_list(api, config_file['watch'])
 
     track = config('TRACK').split(',')
 
