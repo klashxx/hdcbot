@@ -1,6 +1,7 @@
 """
 HDCBot
 """
+import time
 import logging
 
 import tweepy
@@ -12,13 +13,7 @@ class StreamListener(tweepy.StreamListener):
         super(StreamListener, self).__init__(api=api)
 
     def on_status(self, status):
-        try:
-            new_favorite = self.api.create_favorite(status.id)
-        except tweepy.TweepError:
-            self.logger.debug('unable to like tweet: %d', status.id)
-        else:
-            self.logger.info('tweet favorited: %d', new_favorite.id)
-
+        tweet_processor(self.api, status)
 
     def on_error(self, status_code):
         if status_code == 420:
@@ -50,20 +45,26 @@ def tweet_processor(api, tweet):
         tweet.favorite_count
     )
 
-    if tweet.retweeted:
-        return None
+    if tweet.possibly_sensitive:
+        return True
 
-    if tweet.retweet_count > 5:
+    if not tweet.retweeted and tweet.retweet_count > 5:
         try:
-            status = api.retweet(tweet.id)
+            api.retweet(tweet.id)
         except tweepy.TweepError:
             logger.error('unable to retweet')
         else:
             logger.info('retweeted!')
 
+    if not tweet.favorited:
+        try:
+            api.create_favorite(tweet.id)
+        except tweepy.TweepError:
+            logger.debug('unable to favor')
+        else:
+            logger.info('tweet favorited!')
 
-    if tweet.favorited:
-        return None
+    return True
 
 
 def process_followers(api, last_count=0):
@@ -74,7 +75,7 @@ def process_followers(api, last_count=0):
     if followers_count <= last_count:
         return followers_count
 
-    for follower in tweepy.Cursor(api.followers, screen_name='HijosDelCid').items(5):
+    for follower in tweepy.Cursor(api.followers).items():
         logger.info('processing follower: %s', follower.screen_name)
 
         if not follower.following and (
@@ -93,7 +94,6 @@ def process_followers(api, last_count=0):
 
         for tweet in last_tweets:
             tweet_processor(api, tweet)
-
 
 
 def get_api(logger):
@@ -120,20 +120,16 @@ def main():
     logger = get_logger()
     api = get_api(logger)
 
-    num_followers = process_followers(api, last_count=num_followers)
-
-    return None
-
-    logger.debug(api.rate_limit_status())
-
-
-
     track = config('TRACK').split(',')
 
     logger.info('tracking: %s', str(track))
 
     stream = tweepy.Stream(auth=api.auth, listener=StreamListener(api, logger))
     stream.filter(track=track, async=True)
+
+    while True:
+        num_followers = process_followers(api, last_count=num_followers)
+        time.sleep(60 * 60)
 
     return None
 
