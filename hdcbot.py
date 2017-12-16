@@ -39,7 +39,36 @@ def get_logger():
     return logger
 
 
-def process_followers(api, logger, last_count=0):
+def tweet_processor(api, tweet):
+    logger = logging.getLogger('hdcbot')
+    logger.info('processing tweet: %d', tweet.id)
+    logger.debug(
+        'retweeted: %s (%d) favorited: %s (%d)',
+        str(tweet.retweeted),
+        tweet.retweet_count,
+        str(tweet.favorited),
+        tweet.favorite_count
+    )
+
+    if tweet.retweeted:
+        return None
+
+    if tweet.retweet_count > 5:
+        try:
+            status = api.retweet(tweet.id)
+        except tweepy.TweepError:
+            logger.error('unable to retweet')
+        else:
+            logger.info('retweeted!')
+
+
+    if tweet.favorited:
+        return None
+
+
+def process_followers(api, last_count=0):
+    logger = logging.getLogger('hdcbot')
+
     followers_count = api.me().followers_count
     logger.info('followers count: %d', followers_count)
     if followers_count <= last_count:
@@ -57,6 +86,14 @@ def process_followers(api, logger, last_count=0):
                 logger.error('unable to follow')
             else:
                 logger.info('followed!')
+        try:
+            last_tweets = api.user_timeline(user_id=follower.id, count=3)
+        except tweepy.TweepError:
+            continue
+
+        for tweet in last_tweets:
+            tweet_processor(api, tweet)
+
 
 
 def get_api(logger):
@@ -83,9 +120,13 @@ def main():
     logger = get_logger()
     api = get_api(logger)
 
-    num_followers = process_followers(api, logger, last_count=num_followers)
+    num_followers = process_followers(api, last_count=num_followers)
+
+    return None
 
     logger.debug(api.rate_limit_status())
+
+
 
     track = config('TRACK').split(',')
 
