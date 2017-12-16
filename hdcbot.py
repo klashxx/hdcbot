@@ -39,9 +39,24 @@ def get_logger():
     return logger
 
 
-def get_friends(api):
-    for friend in tweepy.Cursor(api.friends).items():
-        print(friend.screen_name)
+def process_followers(api, logger, last_count=0):
+    followers_count = api.me().followers_count
+    logger.info('followers count: %d', followers_count)
+    if followers_count <= last_count:
+        return followers_count
+
+    for follower in tweepy.Cursor(api.followers, screen_name='HijosDelCid').items(5):
+        logger.info('processing follower: %s', follower.screen_name)
+
+        if not follower.following and (
+                follower.followers_count > 50 and
+                follower.followers_count + 50 > follower.friends_count):
+            try:
+                follower.follow()
+            except tweepy.TweepError:
+                logger.error('unable to follow')
+            else:
+                logger.info('followed!')
 
 
 def get_api(logger):
@@ -58,13 +73,17 @@ def get_api(logger):
     return tweepy.API(
         auth,
         wait_on_rate_limit=True,
-        wait_on_rate_limit_notify=True
+        wait_on_rate_limit_notify=True,
+        compression=True
     )
 
 
 def main():
+    num_followers = 0
     logger = get_logger()
     api = get_api(logger)
+
+    num_followers = process_followers(api, logger, last_count=num_followers)
 
     logger.debug(api.rate_limit_status())
 
@@ -75,6 +94,7 @@ def main():
     stream = tweepy.Stream(auth=api.auth, listener=StreamListener(api, logger))
     stream.filter(track=track, async=True)
 
+    return None
 
 if __name__ == '__main__':
     main()
