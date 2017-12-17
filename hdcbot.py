@@ -235,7 +235,7 @@ def daemon(api, config_file):
     logger.info('stream_tracker launched')
     stream_tracker = tweepy.Stream(
         auth=api.auth,
-        listener=StreamListener(api, logger, words=words)
+        listener=StreamListener(api, logger, words=None)
     )
     stream_tracker.filter(track=track, async=True)
 
