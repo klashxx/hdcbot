@@ -15,11 +15,11 @@ Options:
 """
 
 import logging
+import os
 import time
 
 import tweepy
 import yaml
-from decouple import config
 from docopt import docopt
 
 CONFIG = './config.yml'
@@ -210,8 +210,8 @@ def followers_processor(api, last_count=0):
 
 
 def get_api(logger):
-    auth = tweepy.OAuthHandler(config('API_KEY'), config('API_SECRET'))
-    auth.set_access_token(config('TOKEN'), config('TOKEN_SECRET'))
+    auth = tweepy.OAuthHandler(os.environ['API_KEY'], os.environ['API_SECRET'])
+    auth.set_access_token(os.environ['TOKEN'], os.environ['TOKEN_SECRET'])
 
     return tweepy.API(
         auth,
@@ -258,6 +258,7 @@ def main(arguments):
     num_followers = 0
     logger = get_logger()
     config_file = get_config(CONFIG)
+
     api = get_api(logger)
 
     if unfollow:

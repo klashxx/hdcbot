@@ -8,7 +8,6 @@ name = "pypi"
 [packages]
 
 tweepy = "*"
-python-decouple = "*"
 PyYAML = "*"
 docopt = "*"
 
