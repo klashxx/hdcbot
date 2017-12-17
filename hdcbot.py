@@ -54,15 +54,17 @@ def get_logger():
     return logger
 
 
-def tweet_processor(api, tweet, words=None):
+def tweet_processor(api, status, words=None):
     logger = logging.getLogger('hdcbot')
 
     try:
-        possibly_sensitive = tweet.possibly_sensitive
+        possibly_sensitive = status.possibly_sensitive
     except AttributeError:
         possibly_sensitive = False
 
-    logger.info('processing tweet: %d location: %s', tweet.id, tweet.user.location)
+    logger.info(
+        'processing tweet: %d location: %s', status.id, status.user.location
+    )
 
     if possibly_sensitive:
         logger.debug('sensitive tweet')
@@ -70,13 +72,14 @@ def tweet_processor(api, tweet, words=None):
 
     logger.debug(
         'retweeted: %s (%d) favorited: %s (%d)',
-        str(tweet.retweeted),
-        tweet.retweet_count,
-        str(tweet.favorited),
-        tweet.favorite_count
+        str(status.retweeted),
+        status.retweet_count,
+        str(status.favorited),
+        status.favorite_count
     )
 
-    text = tweet.text.splitlines()
+
+    text = status.text.splitlines()
     logger.debug('text: %s,', str(text))
 
     if isinstance(words, list):
@@ -85,9 +88,9 @@ def tweet_processor(api, tweet, words=None):
         if not any(w in tweet_words for w in words):
             return True
 
-    if not tweet.retweeted and tweet.user.followers_count > 70:
+    if not status.retweeted and status.user.followers_count > 70:
         try:
-            api.retweet(tweet.id)
+            api.retweet(status.id)
         except tweepy.TweepError as error:
             try:
                 error_code = error.args[0][0]['code']
@@ -96,15 +99,15 @@ def tweet_processor(api, tweet, words=None):
                 time.sleep(60 * MIN_SLEEP)
             else:
                 if error_code != 327:
-                   logger.error('unable to retweet: %s', error)
+                    logger.error('unable to retweet: %s', error)
                 else:
                     logger.debug('already retweeted')
         else:
             logger.debug('retweeted!')
 
-    if not tweet.favorited:
+    if not status.favorited:
         try:
-            api.create_favorite(tweet.id)
+            api.create_favorite(status.id)
         except tweepy.TweepError as error:
             try:
                 error_code = error.args[0][0]['code']
