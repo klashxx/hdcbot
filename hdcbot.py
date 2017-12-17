@@ -92,7 +92,7 @@ def tweet_processor(api, tweet, words=None):
             try:
                 error_code = error.args[0][0]['code']
             except TypeError:
-                logger.error('%s , sleeping for %d minutes', error, MIN_SLEEP)
+                logger.error('%s, sleeping for %d minutes', error, MIN_SLEEP)
                 time.sleep(60 * MIN_SLEEP)
             else:
                 if error_code != 327:
@@ -109,7 +109,7 @@ def tweet_processor(api, tweet, words=None):
             try:
                 error_code = error.args[0][0]['code']
             except TypeError:
-                logger.error('%s , sleeping for %d minutes', error, MIN_SLEEP)
+                logger.error('%s, sleeping for %d minutes', error, MIN_SLEEP)
                 time.sleep(60 * MIN_SLEEP)
             else:
                 if error_code != 139:
