@@ -6,7 +6,8 @@ Usage:
   hdcbot.py [options]
 
 Options:
-  --not-daemon         avoid daemonized execution.
+  --not-daemon         avoid daemonized execution
+  --unfollow           unfollows non followers
   --version            show program's version number and exit
   -h, --help           show this help message and exit
 
@@ -125,6 +126,35 @@ def tweet_processor(api, status, words=None):
     return True
 
 
+def unfollower(api, config_file):
+    logger = logging.getLogger('hdcbot')
+
+    try:
+        omit = [f['user_id'] for f in config_file['omit']]
+    except:
+        omit = []
+
+    logger.debug('white list: %s', str(omit))
+
+    friends_ids = api.friends_ids()
+
+    my_id = api.me().id
+
+    for friend_id in friends_ids:
+        friendship = api.show_friendship(
+            source_id=my_id,
+            target_id=friend_id
+        )[1]
+        if not friendship.following and friend_id not in omit:
+            try:
+                api.destroy_friendship(friend_id)
+            except tweepy.TweepError:
+                pass
+            else:
+                logger.info('user: %s unfollowed!', friendship.screen_name)
+
+    return None
+
 def followers_processor(api, last_count=0):
     logger = logging.getLogger('hdcbot')
 
@@ -170,10 +200,9 @@ def get_api(logger):
     )
 
 
-def daemon(api):
+def daemon(api, config_file):
     logger = logging.getLogger('hdcbot')
 
-    config_file = get_config(CONFIG)
     track = config_file['track']
     words = config_file['words']
     follow = config_file['follow']
@@ -202,14 +231,18 @@ def daemon(api):
 
 def main(arguments):
     not_daemon = arguments['--not-daemon']
+    unfollow = arguments['--unfollow']
+
     num_followers = 0
-
     logger = get_logger()
-
+    config_file = get_config(CONFIG)
     api = get_api(logger)
 
+    if unfollow:
+        unfollower(api, config_file)
+
     if not not_daemon:
-        daemon(api)
+        daemon(api, config_file)
 
     while True:
         num_followers = followers_processor(api, last_count=num_followers)
