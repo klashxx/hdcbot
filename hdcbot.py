@@ -43,7 +43,18 @@ def get_logger():
 
 def tweet_processor(api, tweet, words=None):
     logger = logging.getLogger('hdcbot')
-    logger.info('processing tweet: %d', tweet.id)
+
+    try:
+        possibly_sensitive = tweet.possibly_sensitive
+    except AttributeError:
+        possibly_sensitive = False
+
+    logger.info('processing tweet: %d location: %s', tweet.id, tweet.user.location)
+
+    if possibly_sensitive:
+        logger.debug('sensitive tweet')
+        return True
+
     logger.debug(
         'retweeted: %s (%d) favorited: %s (%d)',
         str(tweet.retweeted),
@@ -158,7 +169,7 @@ def main():
 
     stream = tweepy.Stream(
         auth=api.auth,
-        listener=StreamListener(api, logger, words=words)
+        listener=StreamListener(api, logger, words=None)
     )
     stream.filter(track=track, async=True)
 
