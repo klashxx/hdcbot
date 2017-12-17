@@ -104,7 +104,7 @@ def followers_processor(api, last_count=0):
     logger.info('followers count: %d', followers_count)
     if last_count is None:
         last_count = 0
-    if followers_count != last_count:
+    if followers_count == last_count:
         return followers_count
 
     for follower in tweepy.Cursor(api.followers).items():
@@ -126,6 +126,8 @@ def followers_processor(api, last_count=0):
 
         for tweet in last_tweets:
             tweet_processor(api, tweet)
+
+    return followers_count
 
 
 def get_api(logger):
