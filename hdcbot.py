@@ -126,15 +126,8 @@ def process_followers(api, last_count=0):
 
 
 def get_api(logger):
-    api_key = config('API_KEY')
-    api_secret = config('API_SECRET')
-    token = config('TOKEN')
-    token_secret = config('TOKEN_SECRET')
-
-    logger.debug('API_KEY: %s', api_key)
-    logger.debug('API_SECRET: %s', api_secret)
-    auth = tweepy.OAuthHandler(api_key, api_secret)
-    auth.set_access_token(token, token_secret)
+    auth = tweepy.OAuthHandler(config('API_KEY'), config('API_SECRET'))
+    auth.set_access_token(config('TOKEN'), config('TOKEN_SECRET'))
 
     return tweepy.API(
         auth,
