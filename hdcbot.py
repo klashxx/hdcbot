@@ -6,8 +6,9 @@ Usage:
   hdcbot.py [options]
 
 Options:
-  --not-daemon         avoid daemonized execution
+  --non-daemon         avoid daemonized execution
   --unfollow           unfollows non followers
+  --followers          followers proccesor
   --version            show program's version number and exit
   -h, --help           show this help message and exit
 
@@ -89,7 +90,10 @@ def tweet_processor(api, status, words=None):
         if not any(w in tweet_words for w in words):
             return True
 
-    if not status.retweeted and status.user.followers_count > 70:
+    if (not status.retweeted and
+            status.retweet_count > 10 and
+            status.user.followers_count > 70):
+
         try:
             api.retweet(status.id)
         except tweepy.TweepError as error:
@@ -230,8 +234,9 @@ def daemon(api, config_file):
 
 
 def main(arguments):
-    not_daemon = arguments['--not-daemon']
+    non_daemon = arguments['--non-daemon']
     unfollow = arguments['--unfollow']
+    followers = arguments['--followers']
 
     num_followers = 0
     logger = get_logger()
@@ -241,12 +246,13 @@ def main(arguments):
     if unfollow:
         unfollower(api, config_file)
 
-    if not not_daemon:
+    if not non_daemon:
         daemon(api, config_file)
 
-    while True:
-        num_followers = followers_processor(api, last_count=num_followers)
-        time.sleep(60 * MIN_SLEEP * 4)
+    if followers:
+        while True:
+            num_followers = followers_processor(api, last_count=num_followers)
+            time.sleep(60 * MIN_SLEEP * 4)
 
     return None
 
