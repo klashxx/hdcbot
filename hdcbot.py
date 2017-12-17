@@ -11,12 +11,13 @@ from decouple import config
 CONFIG = './config.yml'
 
 class StreamListener(tweepy.StreamListener):
-    def __init__(self, api, logger):
+    def __init__(self, api, logger, words=None):
         self.logger = logger
+        self.words = words
         super(StreamListener, self).__init__(api=api)
 
     def on_status(self, status):
-        tweet_processor(self.api, status)
+        tweet_processor(self.api, status, words=self.words)
 
     def on_error(self, status_code):
         if status_code == 420:
@@ -40,7 +41,7 @@ def get_logger():
     return logger
 
 
-def tweet_processor(api, tweet):
+def tweet_processor(api, tweet, words=None):
     logger = logging.getLogger('hdcbot')
     logger.info('processing tweet: %d', tweet.id)
     logger.debug(
@@ -53,6 +54,12 @@ def tweet_processor(api, tweet):
 
     text = tweet.text.splitlines()
     logger.debug('text: %s,', str(text))
+
+    if isinstance(words, list):
+        tweet_words = ' '.join(text).split()
+        logger.debug('text: %s,', str(tweet_words))
+        if not any(w in tweet_words for w in words):
+            return True
 
     if not tweet.retweeted and tweet.user.followers_count > 70:
         try:
@@ -149,7 +156,10 @@ def main():
     logger.info('tracking: %s', str(track))
     logger.info('words: %s', str(words))
 
-    stream = tweepy.Stream(auth=api.auth, listener=StreamListener(api, logger))
+    stream = tweepy.Stream(
+        auth=api.auth,
+        listener=StreamListener(api, logger, words=words)
+    )
     stream.filter(track=track, async=True)
 
     process_wath_list(api, config_file['watch'])
