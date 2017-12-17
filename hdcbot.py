@@ -97,7 +97,7 @@ def tweet_processor(api, tweet, words=None):
     return True
 
 
-def process_followers(api, last_count=0):
+def followers_processor(api, last_count=0):
     logger = logging.getLogger('hdcbot')
 
     followers_count = api.me().followers_count
@@ -168,7 +168,7 @@ def main():
     stream_watcher.filter(follow=follow_list, async=True)
 
     while True:
-        num_followers = process_followers(api, last_count=num_followers)
+        num_followers = followers_processor(api, last_count=num_followers)
         time.sleep(60 * 60)
 
     return None
