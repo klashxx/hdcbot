@@ -1,12 +1,24 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""hdcbot ...just another tweeter bot.
+
+Usage:
+  hdcbot.py [options]
+
+Options:
+  --not-daemon         avoid daemonized execution.
+  --version            show program's version number and exit
+  -h, --help           show this help message and exit
+
 """
-HDCBot
-"""
+
 import logging
 import time
 
 import tweepy
 import yaml
 from decouple import config
+from docopt import docopt
 
 CONFIG = './config.yml'
 
@@ -142,32 +154,46 @@ def get_api(logger):
     )
 
 
-def main():
-    num_followers = 0
-    logger = get_logger()
-    config_file = get_config(CONFIG)
-    api = get_api(logger)
+def daemon(api):
+    logger = logging.getLogger('hdcbot')
 
+    config_file = get_config(CONFIG)
     track = config_file['track']
     words = config_file['words']
     follow = config_file['follow']
-    follow_list = [str(f['user_id']) for f in follow]
 
     logger.info('tracking: %s', str(track))
     logger.info('words: %s', str(words))
     logger.info('follow: %s', str(follow))
 
+    logger.info('stream_tracker launched')
     stream_tracker = tweepy.Stream(
         auth=api.auth,
         listener=StreamListener(api, logger, words=words)
     )
     stream_tracker.filter(track=track, async=True)
 
+    logger.info('stream_watcher launched')
     stream_watcher = tweepy.Stream(
         auth=api.auth,
         listener=StreamListener(api, logger, words=None)
     )
-    stream_watcher.filter(follow=follow_list, async=True)
+    stream_watcher.filter(
+        follow=[str(f['user_id']) for f in follow],
+        async=True
+    )
+
+
+def main(arguments):
+    not_daemon = arguments['--not-daemon']
+    num_followers = 0
+
+    logger = get_logger()
+
+    api = get_api(logger)
+
+    if not not_daemon:
+        daemon(api)
 
     while True:
         num_followers = followers_processor(api, last_count=num_followers)
@@ -176,4 +202,4 @@ def main():
     return None
 
 if __name__ == '__main__':
-    main()
+    main(docopt(__doc__, version='0.1'))
