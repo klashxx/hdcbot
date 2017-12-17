@@ -84,11 +84,28 @@ def tweet_processor(api, status, words=None):
     text = status.text.splitlines()
     logger.debug('text: %s,', str(text))
 
-    if isinstance(words, list):
+    if words is not None:
         tweet_words = ' '.join(text).split()
         logger.debug('text: %s,', str(tweet_words))
-        if not any(w in tweet_words for w in words):
-            return True
+
+        try:
+            look = words['look']
+        except:
+            look = None
+
+        try:
+            block = words['block']
+        except:
+            block = None
+
+        if isinstance(look, list):
+            if not any(w in tweet_words for w in look):
+                return True
+
+        if isinstance(block, list):
+            if any(w in tweet_words for w in block):
+                logger.debug('tweet blocked')
+                return True
 
     if (not status.retweeted and
             status.retweet_count > 10 and
