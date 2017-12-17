@@ -1,0 +1,33 @@
+params:
+  min_retweet_count: 10
+  min_followers_count: 70
+  add_followers_count: 300
+  mins_sleep: 15
+
+words:
+  look:
+    - running
+    - correr
+    - ciclismo
+    - bici
+    - deporte
+  block:
+    - sex
+    - sexo
+    - tetas
+    - polla
+    - follar
+
+track:
+  - almeria
+  - almería
+
+follow:
+  - screen_name: juan_diego
+    user_id:     10662422
+  - screen_name: HijosDelCid
+    user_id:     4901757635
+
+omit:
+  - screen_name: juan_diego
+    user_id:     10662422
