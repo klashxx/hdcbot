@@ -9,7 +9,8 @@ name = "pypi"
 
 tweepy = "*"
 python-decouple = "*"
-pylint = "*"
+PyYAML = "*"
+docopt = "*"
 
 
 [dev-packages]
