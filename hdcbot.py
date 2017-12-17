@@ -96,21 +96,6 @@ def tweet_processor(api, tweet, words=None):
 
     return True
 
-def process_wath_list(api, watch_list):
-    logger = logging.getLogger('hdcbot')
-
-    for screen_name in watch_list:
-        logger.info('processing watch user: %s', screen_name)
-        try:
-            last_tweets = api.user_timeline(screen_name=screen_name, count=3)
-        except tweepy.TweepError:
-            logger.error('unable to get user timeline')
-            continue
-
-        for tweet in last_tweets:
-            tweet_processor(api, tweet)
-
-
 
 def process_followers(api, last_count=0):
     logger = logging.getLogger('hdcbot')
@@ -119,7 +104,7 @@ def process_followers(api, last_count=0):
     logger.info('followers count: %d', followers_count)
     if last_count is None:
         last_count = 0
-    if followers_count <= last_count:
+    if followers_count != last_count:
         return followers_count
 
     for follower in tweepy.Cursor(api.followers).items():
@@ -163,17 +148,24 @@ def main():
 
     track = config_file['track']
     words = config_file['words']
+    follow = config_file['follow']
+    follow_list = [str(f['user_id']) for f in follow]
 
     logger.info('tracking: %s', str(track))
     logger.info('words: %s', str(words))
+    logger.info('follow: %s', str(follow))
 
-    stream = tweepy.Stream(
+    stream_tracker = tweepy.Stream(
+        auth=api.auth,
+        listener=StreamListener(api, logger, words=words)
+    )
+    stream_tracker.filter(track=track, async=True)
+
+    stream_watcher = tweepy.Stream(
         auth=api.auth,
         listener=StreamListener(api, logger, words=None)
     )
-    stream.filter(track=track, async=True)
-
-    process_wath_list(api, config_file['watch'])
+    stream_watcher.filter(follow=follow_list, async=True)
 
     while True:
         num_followers = process_followers(api, last_count=num_followers)
