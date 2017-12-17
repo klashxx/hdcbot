@@ -21,6 +21,7 @@ from decouple import config
 from docopt import docopt
 
 CONFIG = './config.yml'
+MIN_SLEEP = 15
 
 class StreamListener(tweepy.StreamListener):
     def __init__(self, api, logger, words=None):
@@ -88,10 +89,16 @@ def tweet_processor(api, tweet, words=None):
         try:
             api.retweet(tweet.id)
         except tweepy.TweepError as error:
-            if error.args[0][0]['code'] != 327:
-                logger.error('unable to retweet: %s', error)
+            try:
+                error_code = error.args[0][0]['code']
+            except TypeError:
+                logger.error('%s , sleeping for %d minutes', error, MIN_SLEEP)
+                time.sleep(60 * MIN_SLEEP)
             else:
-                logger.debug('already retweeted')
+                if error_code != 327:
+                   logger.error('unable to retweet: %s', error)
+                else:
+                    logger.debug('already retweeted')
         else:
             logger.debug('retweeted!')
 
@@ -99,10 +106,16 @@ def tweet_processor(api, tweet, words=None):
         try:
             api.create_favorite(tweet.id)
         except tweepy.TweepError as error:
-            if error.args[0][0]['code'] != 139:
-                logger.error('unable to favor %s', error)
+            try:
+                error_code = error.args[0][0]['code']
+            except TypeError:
+                logger.error('%s , sleeping for %d minutes', error, MIN_SLEEP)
+                time.sleep(60 * MIN_SLEEP)
             else:
-                logger.debug('already favorited')
+                if error_code != 139:
+                    logger.error('unable to favor tweet %s', error)
+                else:
+                    logger.debug('already favorited')
         else:
             logger.debug('tweet favorited!')
 
@@ -197,7 +210,7 @@ def main(arguments):
 
     while True:
         num_followers = followers_processor(api, last_count=num_followers)
-        time.sleep(60 * 60)
+        time.sleep(60 * MIN_SLEEP * 4)
 
     return None
 
