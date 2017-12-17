@@ -51,21 +51,30 @@ def tweet_processor(api, tweet):
         tweet.favorite_count
     )
 
-    if not tweet.retweeted and tweet.retweet_count > 5:
+    text = tweet.text.splitlines()
+    logger.debug('text: %s,', str(text))
+
+    if not tweet.retweeted and tweet.user.followers_count > 70:
         try:
             api.retweet(tweet.id)
-        except tweepy.TweepError:
-            logger.error('unable to retweet')
+        except tweepy.TweepError as error:
+            if error.args[0][0]['code'] != 327:
+                logger.error('unable to retweet: %s', error)
+            else:
+                logger.debug('already retweeted')
         else:
-            logger.info('retweeted!')
+            logger.debug('retweeted!')
 
     if not tweet.favorited:
         try:
             api.create_favorite(tweet.id)
-        except tweepy.TweepError:
-            logger.debug('unable to favor')
+        except tweepy.TweepError as error:
+            if error.args[0][0]['code'] != 139:
+                logger.error('unable to favor %s', error)
+            else:
+                logger.debug('already favorited')
         else:
-            logger.info('tweet favorited!')
+            logger.debug('tweet favorited!')
 
     return True
 
@@ -90,6 +99,8 @@ def process_followers(api, last_count=0):
 
     followers_count = api.me().followers_count
     logger.info('followers count: %d', followers_count)
+    if last_count is None:
+        last_count = 0
     if followers_count <= last_count:
         return followers_count
 
@@ -97,8 +108,8 @@ def process_followers(api, last_count=0):
         logger.info('processing follower: %s', follower.screen_name)
 
         if not follower.following and (
-                follower.followers_count > 50 and
-                follower.followers_count + 50 > follower.friends_count):
+                follower.followers_count > 90 and
+                follower.followers_count + 300 > follower.friends_count):
             try:
                 follower.follow()
             except tweepy.TweepError:
@@ -139,14 +150,14 @@ def main():
     config_file = get_config(CONFIG)
     api = get_api(logger)
 
-    process_wath_list(api, config_file['watch'])
-
     track = config('TRACK').split(',')
 
     logger.info('tracking: %s', str(track))
 
     stream = tweepy.Stream(auth=api.auth, listener=StreamListener(api, logger))
     stream.filter(track=track, async=True)
+
+    process_wath_list(api, config_file['watch'])
 
     while True:
         num_followers = process_followers(api, last_count=num_followers)
