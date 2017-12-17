@@ -143,9 +143,11 @@ def main():
     config_file = get_config(CONFIG)
     api = get_api(logger)
 
-    track = config('TRACK').split(',')
+    track = config_file['track']
+    words = config_file['words']
 
     logger.info('tracking: %s', str(track))
+    logger.info('words: %s', str(words))
 
     stream = tweepy.Stream(auth=api.auth, listener=StreamListener(api, logger))
     stream.filter(track=track, async=True)
