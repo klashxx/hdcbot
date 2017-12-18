@@ -47,6 +47,13 @@ follow:
     user_id:     188683472
   - screen_name: metro_madrid
     user_id:     182764833
+  - screen_name: sosdesaparecido
+    user_id:     80820996
+  - screen_name: Infoadif
+    user_id:     803578472929128448
+  - screen_name: Inforenfe
+    user_id:     4163160257
+
 
 omit:
   - screen_name: juan_diego
