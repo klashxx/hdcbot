@@ -3,15 +3,18 @@
 """hdcbot ...just another tweeter bot.
 
 Usage:
-  hdcbot.py [options]
+  hdcbot.py CNF [options]
+
+Arguments:
+  CNF                        config file
 
 Options:
-  --non-daemon         avoid daemonized execution
-  --unfollow           unfollows non followers
-  --followers          followers proccesor
-  --getid screen_name  id for a given screen name
-  --version            show program's version number and exit
-  -h, --help           show this help message and exit
+  --daemon                   daemonized execution
+  --unfollow                 unfollows non followers
+  --followers=<screen_name>  followers proccesor (<me> = my account)
+  --getid screen_name        id for a given screen name
+  --version                  show program's version number and exit
+  -h, --help                 show this help message and exit
 
 """
 
@@ -21,12 +24,11 @@ import os
 import time
 from random import randint
 
-import tweepy
 import yaml
+
+import tweepy
 from docopt import docopt
 
-CONFIG = './config.yml'
-MIN_SLEEP = 15
 
 class StreamListener(tweepy.StreamListener):
     def __init__(self, api, logger, words=None):
@@ -41,15 +43,16 @@ class StreamListener(tweepy.StreamListener):
         if status_code == 420:
             return False
 
+
 def get_config(config_file):
     with open(config_file) as stream:
         return yaml.load(stream)
 
+
 def get_logger():
     logger = logging.getLogger('hdcbot')
     fmt = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler = logging.StreamHandler()
     logger.setLevel(logging.DEBUG)
     handler.setLevel(logging.DEBUG)
@@ -57,7 +60,6 @@ def get_logger():
     logger.addHandler(handler)
 
     return logger
-
 
 def tweet_processor(api, status, words=None):
     logger = logging.getLogger('hdcbot')
@@ -112,10 +114,10 @@ def tweet_processor(api, status, words=None):
                 return True
 
     if (not status.retweeted and
-            status.retweet_count > 10 and
-            status.user.followers_count > 70):
+            status.retweet_count > params['min_retweet_count'] and
+            status.user.followers_count > params['min_followers_count']):
 
-        seconds_to_wait = randint(randint(10, 30), 60 * 5)
+        seconds_to_wait = randint(60, 60 * 5)
         logger.debug(
             'waiting to retweet id: %d for %d seconds',
             status.id,
@@ -129,8 +131,12 @@ def tweet_processor(api, status, words=None):
             try:
                 error_code = error.args[0][0]['code']
             except TypeError:
-                logger.error('%s, sleeping for %d minutes', error, MIN_SLEEP)
-                time.sleep(60 * MIN_SLEEP)
+                logger.error(
+                    '%s, sleeping for %d minutes',
+                    error,
+                    params['mins_sleep']
+                )
+                time.sleep(60 * params['mins_sleep'])
             else:
                 if error_code != 327:
                     logger.error(
@@ -142,7 +148,7 @@ def tweet_processor(api, status, words=None):
             logger.debug('id: %d retweeted!', status.id)
 
     if not status.favorited:
-        seconds_to_wait = randint(randint(10, 30), 60 * 5)
+        seconds_to_wait = randint(60, 60 * 5)
         logger.debug(
             'waiting to favor id: %d for %d seconds',
             status.id,
@@ -156,8 +162,11 @@ def tweet_processor(api, status, words=None):
             try:
                 error_code = error.args[0][0]['code']
             except TypeError:
-                logger.error('%s, sleeping for %d minutes', error, MIN_SLEEP)
-                time.sleep(60 * MIN_SLEEP)
+                logger.error(
+                    '%s, sleeping for %d minutes',
+                    error,
+                    params['mins_sleep'])
+                time.sleep(60 * params['mins_sleep'])
             else:
                 if error_code != 139:
                     logger.error(
@@ -200,37 +209,79 @@ def unfollower(api, config_file):
 
     return None
 
-def followers_processor(api, last_count=0):
+def followers_processor(api, screen_name=None, items_number=5000):
     logger = logging.getLogger('hdcbot')
+    batch_count = 0
 
-    followers_count = api.me().followers_count
-    logger.info('followers count: %d', followers_count)
-    if last_count is None:
-        last_count = 0
-    if followers_count == last_count:
-        return followers_count
+    if screen_name is None or screen_name == 'me':
+        ref_user = api.me()
+    else:
+        ref_user = get_user(api, screen_name)
 
-    for follower in tweepy.Cursor(api.followers).items():
-        logger.info('processing follower: %s', follower.screen_name)
+    if ref_user is None:
+        logger.error('unable to get user for follower processor')
+        return None
 
-        if not follower.following and (
-                follower.followers_count > 90 and
-                follower.followers_count + 300 > follower.friends_count):
-            try:
-                follower.follow()
-            except tweepy.TweepError:
-                logger.error('unable to follow')
-            else:
-                logger.info('followed!')
+    logger.info(
+        'processing followers for user: %s (%d)',
+        ref_user.screen_name,
+        ref_user.followers_count
+    )
+
+    for follower in tweepy.Cursor(
+        api.followers,
+        id=ref_user.id).items(items_number):
+
+        if follower.following:
+            logger.debug('%s already followed', follower.screen_name )
+            continue
+
+        if follower.followers_count < params['min_followers_count']:
+            logger.debug(
+                '%d: not enough followers for %s',
+                follower.followers_count,
+                follower.screen_name
+            )
+            continue
+
+        if (follower.followers_count + params['add_followers_count'] <
+            follower.friends_count):
+            logger.debug(
+                '%d: not enough friends for %s',
+                follower.friends_count,
+                follower.screen_name
+            )
+            continue
+
+        batch_count += 1
+        logger.info(
+            'processing follower: %s batch number: %d',
+            follower.screen_name,
+            batch_count
+        )
+
+        if batch_count % params['max_batch'] == 0:
+            seconds_to_wait = 60 * params['mins_sleep'] * 2
+            logger.debug('batch pause for %d seconds', seconds_to_wait)
+            time.sleep(seconds_to_wait)
+
+        try:
+            follower.follow()
+        except tweepy.TweepError:
+            logger.error('unable to follow: %s', follower.screen_name)
+            continue
+
+        logger.info('%s followed!', follower.screen_name)
+
         try:
             last_tweets = api.user_timeline(user_id=follower.id, count=3)
         except tweepy.TweepError:
             continue
 
-        for tweet in last_tweets:
-            tweet_processor(api, tweet)
+        for status in last_tweets:
+            tweet_processor(api, status)
 
-    return followers_count
+    return None
 
 
 def get_api(logger):
@@ -245,7 +296,7 @@ def get_api(logger):
     )
 
 
-def daemon(api, config_file):
+def daemon_thread(api, config_file):
     logger = logging.getLogger('hdcbot')
 
     track = config_file['track']
@@ -261,7 +312,6 @@ def daemon(api, config_file):
         auth=api.auth,
         listener=StreamListener(api, logger, words=words)
     )
-
     stream_tracker.filter(languages=['es'], track=track, async=True)
 
     logger.info('stream_watcher launched')
@@ -274,39 +324,48 @@ def daemon(api, config_file):
         async=True
     )
 
+def get_user(api, screen_name):
+    logger = logging.getLogger('hdcbot')
 
-def get_id(api, screen_name):
     try:
         user = api.get_user(screen_name)
     except tweepy.TweepError as error:
-        logger.error('unable to get %s id:', screen_name, error)
-    else:
-        logger.info('user id for %s: %d', screen_name, user.id)
+        logger.error('unable to get %s id: %s', screen_name, error)
+        return None
 
-    return None
+    logger.info('user id for %s: %d', screen_name, user.id)
 
+    return user
 
 def main(arguments):
-    non_daemon = arguments['--non-daemon']
+    config = arguments['CNF']
+    daemon = arguments['--daemon']
     unfollow = arguments['--unfollow']
     followers = arguments['--followers']
-    getid = arguments['--getid']
+    screen_name = arguments['--getid']
 
-    config_file = get_config(CONFIG)
+    try:
+        config_file = get_config(config)
+    except FileNotFoundError:
+        print ('unable to open file: {0}'.format(config))
+        return None
+
+    global params
+    params = config_file['params']
 
     api = get_api(get_logger())
+
+    if screen_name is not None:
+        user = get_user(api, screen_name)
 
     if unfollow:
         unfollower(api, config_file)
 
-    if not non_daemon:
-        daemon(api, config_file)
+    if daemon:
+        daemon_thread(api, config_file)
 
-    if followers:
-        num_followers = 0
-        while True:
-            num_followers = followers_processor(api, last_count=num_followers)
-            time.sleep(60 * MIN_SLEEP * 4)
+    if followers is not None:
+        followers_processor(api, screen_name=followers)
 
     return None
 
