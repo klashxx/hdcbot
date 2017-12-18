@@ -349,7 +349,7 @@ def main(arguments):
     try:
         config_file = get_config(config)
     except FileNotFoundError:
-        print ('unable to open file: {0}'.format(config))
+        print('unable to open file: {0}'.format(config))
         return None
 
     global params
@@ -358,7 +358,7 @@ def main(arguments):
     api = get_api(get_logger())
 
     if screen_name is not None:
-        user = get_user(api, screen_name)
+        get_user(api, screen_name)
 
     if unfollow:
         unfollower(api, config_file)
