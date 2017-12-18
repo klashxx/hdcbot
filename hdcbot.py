@@ -77,11 +77,26 @@ def tweet_processor(api, status, words=None, retweet=False):
         possibly_sensitive = False
 
     logger.info(
-        'processing tweet: %d location: %s', status.id, status.user.location
+        'processing tweet: %d screen_name: %s location: %s',
+        status.id,
+        status.user.screen_name,
+        status.user.location
     )
+
+    try:
+        retweeted_status = status.retweeted_status
+    except AttributeError:
+        pass
+    else:
+        logger.debug('retweet detected')
+        return True
 
     if possibly_sensitive:
         logger.debug('sensitive tweet')
+        return True
+
+    if status.in_reply_to_screen_name is not None:
+        logger.debug('reply tweet')
         return True
 
     logger.debug(
