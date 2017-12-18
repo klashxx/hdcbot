@@ -30,11 +30,12 @@ words:
 track:
   - running
   - correr
-  - carrera
   - ciclismo
   - bici
   - deporte
   - strava
+  - nadar
+  - natación
 
 follow:
   - screen_name: juan_diego
