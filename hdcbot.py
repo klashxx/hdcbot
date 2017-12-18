@@ -3,10 +3,10 @@
 """hdcbot ...just another tweeter bot.
 
 Usage:
-  hdcbot.py CNF [options]
+  hdcbot.py [CNF] [options]
 
 Arguments:
-  CNF                        config file
+  CNF                        config file [default: config.yml]
 
 Options:
   --daemon                   daemonized execution
@@ -28,6 +28,8 @@ import yaml
 
 import tweepy
 from docopt import docopt
+
+CONFIG = './config.yml'
 
 
 class StreamListener(tweepy.StreamListener):
@@ -338,7 +340,7 @@ def get_user(api, screen_name):
     return user
 
 def main(arguments):
-    config = arguments['CNF']
+    config = arguments['CNF'] if arguments['CNF'] is not None else CONFIG
     daemon = arguments['--daemon']
     unfollow = arguments['--unfollow']
     followers = arguments['--followers']
