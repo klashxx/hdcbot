@@ -14,9 +14,11 @@ Options:
 
 """
 
+
 import logging
 import os
 import time
+from random import randint
 
 import tweepy
 import yaml
@@ -80,7 +82,6 @@ def tweet_processor(api, status, words=None):
         status.favorite_count
     )
 
-
     text = status.text.splitlines()
     logger.debug('text: %s,', str(text))
 
@@ -99,17 +100,27 @@ def tweet_processor(api, status, words=None):
             block = None
 
         if isinstance(look, list):
-            if not any(w in tweet_words for w in look):
+            if not any(
+                w.lower() in [tw.lower() for tw in tweet_words] for w in look):
                 return True
 
         if isinstance(block, list):
-            if any(w in tweet_words for w in block):
-                logger.debug('tweet blocked')
+            if any(
+                w.lower() in [tw.lower() for tw in tweet_words] for w in block):
+                logger.debug('tweet blocked: %d', status.id)
                 return True
 
     if (not status.retweeted and
             status.retweet_count > 10 and
             status.user.followers_count > 70):
+
+        seconds_to_wait = randint(randint(10, 30), 60 * 5)
+        logger.debug(
+            'waiting to retweet id: %d for %d seconds',
+            status.id,
+            seconds_to_wait
+        )
+        time.sleep(seconds_to_wait)
 
         try:
             api.retweet(status.id)
@@ -121,13 +132,23 @@ def tweet_processor(api, status, words=None):
                 time.sleep(60 * MIN_SLEEP)
             else:
                 if error_code != 327:
-                    logger.error('unable to retweet: %s', error)
+                    logger.error(
+                        'unable to retweet %d: %s', status.id, error
+                    )
                 else:
-                    logger.debug('already retweeted')
+                    logger.debug('already retweeted, id: %d', status.id)
         else:
-            logger.debug('retweeted!')
+            logger.debug('id: %d retweeted!', status.id)
 
     if not status.favorited:
+        seconds_to_wait = randint(randint(10, 30), 60 * 5)
+        logger.debug(
+            'waiting to favor id: %d for %d seconds',
+            status.id,
+            seconds_to_wait
+        )
+        time.sleep(seconds_to_wait)
+
         try:
             api.create_favorite(status.id)
         except tweepy.TweepError as error:
@@ -138,11 +159,13 @@ def tweet_processor(api, status, words=None):
                 time.sleep(60 * MIN_SLEEP)
             else:
                 if error_code != 139:
-                    logger.error('unable to favor tweet %s', error)
+                    logger.error(
+                        'unable to favor tweet %d: %s', status.id, error
+                    )
                 else:
-                    logger.debug('already favorited')
+                    logger.debug('already favorited, id: %d', status.id)
         else:
-            logger.debug('tweet favorited!')
+            logger.debug('id: %d favorited!', status.id)
 
     return True
 
@@ -235,9 +258,10 @@ def daemon(api, config_file):
     logger.info('stream_tracker launched')
     stream_tracker = tweepy.Stream(
         auth=api.auth,
-        listener=StreamListener(api, logger, words=None)
+        listener=StreamListener(api, logger, words=words)
     )
-    stream_tracker.filter(track=track, async=True)
+
+    stream_tracker.filter(languages=['es'], track=track, async=True)
 
     logger.info('stream_watcher launched')
     stream_watcher = tweepy.Stream(
@@ -275,4 +299,4 @@ def main(arguments):
     return None
 
 if __name__ == '__main__':
-    main(docopt(__doc__, version='0.1'))
+     main(docopt(__doc__, version='0.1'))
