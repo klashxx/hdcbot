@@ -1,1 +1,1 @@
-worker: python hdcbot.py
+worker: python hdcbot.py ServicioPubES.yml --daemon
