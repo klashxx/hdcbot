@@ -1,0 +1,53 @@
+params:
+  min_retweet_count: 10
+  min_followers_count: 70
+  add_followers_count: 300
+  mins_sleep: 15
+  max_batch: 100
+
+words:
+  look:
+    - accidente
+    - atasco
+    - embotellamiento
+    - retraso
+    - crimen
+    - robo
+  block:
+    - sex
+    - sexo
+    - tetas
+    - polla
+    - follar
+    - joder
+
+track:
+  - '*'
+
+follow:
+  - screen_name: policia
+    user_id:     23791197
+  - screen_name: guardiacivil
+    user_id:     295608887
+  - screen_name: Defensagob
+    user_id:     274035504
+  - screen_name: interiorgob
+    user_id:     231000704
+  - screen_name: Policia_Almeria
+    user_id:     785789650006781952
+  - screen_name: controladores
+    user_id:     115987338
+  - screen_name: AEMET_Esp
+    user_id:     1060403089
+  - screen_name: aena
+    user_id:     222766992
+  - screen_name: InformacionDGT
+    user_id:     974022020
+  - screen_name: GDTGuardiaCivil
+    user_id:     188683472
+  - screen_name: metro_madrid
+    user_id:     182764833
+
+omit:
+  - screen_name: juan_diego
+    user_id:     10662422
