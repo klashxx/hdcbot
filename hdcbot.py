@@ -18,28 +18,33 @@ Options:
 
 """
 
-
 import logging
 import os
 import time
 from random import randint
-
-import yaml
+from threading import Thread
 
 import tweepy
+import yaml
 from docopt import docopt
 
 CONFIG = './config.yml'
 
 
 class StreamListener(tweepy.StreamListener):
-    def __init__(self, api, logger, words=None):
+    def __init__(self, api, logger, words=None, retweet=False):
         self.logger = logger
         self.words = words
+        self.retweet = retweet
         super(StreamListener, self).__init__(api=api)
 
     def on_status(self, status):
-        tweet_processor(self.api, status, words=self.words)
+        thread = Thread(
+            target=tweet_processor,
+            args=(self.api, status,),
+            kwargs={'words': self.words, 'retweet': self.retweet}
+        )
+        thread.start()
 
     def on_error(self, status_code):
         if status_code == 420:
@@ -63,7 +68,7 @@ def get_logger():
 
     return logger
 
-def tweet_processor(api, status, words=None):
+def tweet_processor(api, status, words=None, retweet=False):
     logger = logging.getLogger('hdcbot')
 
     try:
@@ -105,21 +110,22 @@ def tweet_processor(api, status, words=None):
             block = None
 
         if isinstance(look, list):
-            if not any(
-                w.lower() in [tw.lower() for tw in tweet_words] for w in look):
+            if not any(w.lower() in [tw.lower() for tw in tweet_words]
+                       for w in look):
                 return True
 
         if isinstance(block, list):
-            if any(
-                w.lower() in [tw.lower() for tw in tweet_words] for w in block):
+            if any(w.lower() in [tw.lower() for tw in tweet_words]
+                   for w in block):
                 logger.debug('tweet blocked: %d', status.id)
                 return True
 
-    if (not status.retweeted and
+    if (not status.retweeted and (
             status.retweet_count > params['min_retweet_count'] and
-            status.user.followers_count > params['min_followers_count']):
+            status.user.followers_count > params['min_followers_count'])
+            or retweet):
 
-        seconds_to_wait = randint(60, 60 * 5)
+        seconds_to_wait = randint(randint(10, 30), 60 * 3)
         logger.debug(
             'waiting to retweet id: %d for %d seconds',
             status.id,
@@ -150,7 +156,7 @@ def tweet_processor(api, status, words=None):
             logger.debug('id: %d retweeted!', status.id)
 
     if not status.favorited:
-        seconds_to_wait = randint(60, 60 * 5)
+        seconds_to_wait = randint(randint(10, 30), 60 * 2)
         logger.debug(
             'waiting to favor id: %d for %d seconds',
             status.id,
@@ -312,14 +318,17 @@ def daemon_thread(api, config_file):
     logger.info('stream_tracker launched')
     stream_tracker = tweepy.Stream(
         auth=api.auth,
-        listener=StreamListener(api, logger, words=words)
+        listener=StreamListener(api, logger, words=words, retweet=False)
     )
-    stream_tracker.filter(languages=['es'], track=track, async=True)
+    if track[0] == '~':
+        stream_tracker.filter(languages=['es'], async=True)
+    else:
+        stream_tracker.filter(languages=['es'], track=track, async=True)
 
     logger.info('stream_watcher launched')
     stream_watcher = tweepy.Stream(
         auth=api.auth,
-        listener=StreamListener(api, logger, words=None)
+        listener=StreamListener(api, logger, words=None, retweet=True)
     )
     stream_watcher.filter(
         follow=[str(f['user_id']) for f in follow],
