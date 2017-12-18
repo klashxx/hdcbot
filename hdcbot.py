@@ -9,6 +9,7 @@ Options:
   --non-daemon         avoid daemonized execution
   --unfollow           unfollows non followers
   --followers          followers proccesor
+  --getid screen_name  id for a given screen name
   --version            show program's version number and exit
   -h, --help           show this help message and exit
 
@@ -274,16 +275,26 @@ def daemon(api, config_file):
     )
 
 
+def get_id(api, screen_name):
+    try:
+        user = api.get_user(screen_name)
+    except tweepy.TweepError as error:
+        logger.error('unable to get %s id:', screen_name, error)
+    else:
+        logger.info('user id for %s: %d', screen_name, user.id)
+
+    return None
+
+
 def main(arguments):
     non_daemon = arguments['--non-daemon']
     unfollow = arguments['--unfollow']
     followers = arguments['--followers']
+    getid = arguments['--getid']
 
-    num_followers = 0
-    logger = get_logger()
     config_file = get_config(CONFIG)
 
-    api = get_api(logger)
+    api = get_api(get_logger())
 
     if unfollow:
         unfollower(api, config_file)
@@ -292,6 +303,7 @@ def main(arguments):
         daemon(api, config_file)
 
     if followers:
+        num_followers = 0
         while True:
             num_followers = followers_processor(api, last_count=num_followers)
             time.sleep(60 * MIN_SLEEP * 4)
