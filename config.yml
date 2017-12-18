@@ -3,14 +3,16 @@ params:
   min_followers_count: 70
   add_followers_count: 300
   mins_sleep: 15
+  max_batch: 100
 
 words:
   look:
-    - running
-    - correr
-    - ciclismo
-    - bici
-    - deporte
+    - almeria
+    - almería
+    - granada
+    - murcia
+    - madrid
+    - españa
   block:
     - sex
     - sexo
@@ -19,8 +21,13 @@ words:
     - follar
 
 track:
-  - almeria
-  - almería
+  - running
+  - correr
+  - carrera
+  - ciclismo
+  - bici
+  - deporte
+  - strava
 
 follow:
   - screen_name: juan_diego
