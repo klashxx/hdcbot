@@ -13,6 +13,9 @@ words:
     - retraso
     - crimen
     - robo
+    - obras
+    - cancelación
+    - cancelacion
   block:
     - sex
     - sexo
@@ -22,7 +25,7 @@ words:
     - joder
 
 track:
-  - '*'
+  - '~'
 
 follow:
   - screen_name: policia
