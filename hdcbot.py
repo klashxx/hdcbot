@@ -27,6 +27,10 @@ from threading import Thread
 import tweepy
 import yaml
 from docopt import docopt
+from tweepy.models import Status
+from tweepy.utils import import_simplejson
+
+json = import_simplejson()
 
 CONFIG = './config.yml'
 
@@ -45,6 +49,41 @@ class StreamListener(tweepy.StreamListener):
             kwargs={'words': self.words, 'retweet': self.retweet}
         )
         thread.start()
+
+    def on_data(self, raw_data):
+        data = json.loads(raw_data)
+        self.logger.debug('raw_data: %s', str(raw_data))
+
+        if 'in_reply_to_status_id' in data:
+            status = Status.parse(self.api, data)
+            if self.on_status(status) is False:
+                return False
+        elif 'delete' in data:
+            delete = data['delete']['status']
+            if self.on_delete(delete['id'], delete['user_id']) is False:
+                return False
+        elif 'event' in data:
+            status = Status.parse(self.api, data)
+            if self.on_event(status) is False:
+                return False
+        elif 'direct_message' in data:
+            status = Status.parse(self.api, data)
+            if self.on_direct_message(status) is False:
+                return False
+        elif 'friends' in data:
+            if self.on_friends(data['friends']) is False:
+                return False
+        elif 'limit' in data:
+            if self.on_limit(data['limit']['track']) is False:
+                return False
+        elif 'disconnect' in data:
+            if self.on_disconnect(data['disconnect']) is False:
+                return False
+        elif 'warning' in data:
+            if self.on_warning(data['warning']) is False:
+                return False
+        else:
+            self.logger.error('Unknown message type: %s', str(raw_data))
 
     def on_error(self, status_code):
         if status_code == 420:
