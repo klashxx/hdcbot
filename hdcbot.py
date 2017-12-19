@@ -13,6 +13,7 @@ Options:
   --unfollow                 unfollows non followers
   --followers=<screen_name>  followers proccesor (<me> = my account)
   --getid screen_name        id for a given screen name
+  --log=<level>              log level [default: DEBUG]
   --version                  show program's version number and exit
   -h, --help                 show this help message and exit
 
@@ -103,13 +104,14 @@ def get_config(config_file):
         return yaml.load(stream)
 
 
-def get_logger():
+def get_logger(log_level):
     logger = logging.getLogger('hdcbot')
+    level = logging.getLevelName(log_level.upper())
     fmt = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler = logging.StreamHandler()
-    logger.setLevel(logging.DEBUG)
-    handler.setLevel(logging.DEBUG)
+    logger.setLevel(level)
+    handler.setLevel(level)
     handler.setFormatter(fmt)
     logger.addHandler(handler)
 
@@ -362,7 +364,7 @@ def daemon_thread(api, config_file):
     follow = config_file['follow']
 
     logger.info('tracking: %s', str(track))
-    logger.info('words: %s', str(words))
+    logger.debug('words: %s', str(words))
     logger.info('follow: %s', str(follow))
 
     logger.info('stream_tracker launched')
@@ -411,6 +413,7 @@ def main(arguments):
     unfollow = arguments['--unfollow']
     followers = arguments['--followers']
     screen_name = arguments['--getid']
+    log_level = arguments['--log']
 
     try:
         config_file = get_config(config)
@@ -421,7 +424,7 @@ def main(arguments):
     global params
     params = config_file['params']
 
-    api = get_api(get_logger())
+    api = get_api(get_logger(log_level))
 
     if screen_name is not None:
         get_user(api, screen_name)
