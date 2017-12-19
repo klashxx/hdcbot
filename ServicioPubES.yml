@@ -6,16 +6,6 @@ params:
   max_batch: 100
 
 words:
-  look:
-    - accidente
-    - atasco
-    - embotellamiento
-    - retraso
-    - crimen
-    - robo
-    - obras
-    - cancelación
-    - cancelacion
   block:
     - sex
     - sexo
@@ -25,7 +15,20 @@ words:
     - joder
 
 track:
-  - '~'
+  - accidente carrettera
+  - accidente calle
+  - atasco carretera
+  - atasco calle
+  - embotellamiento carretera
+  - retraso tren
+  - retraso avión
+  - retraso avion
+  - obras carrera
+  - retraso aeropuerto
+  - cancelación tren
+  - cancelación aeropuerto
+  - cancelacion tren
+  - cancelacion aeropuerto
 
 follow:
   - screen_name: policia
