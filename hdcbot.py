@@ -36,17 +36,20 @@ CONFIG = './config.yml'
 
 
 class StreamListener(tweepy.StreamListener):
-    def __init__(self, api, logger, words=None, retweet=False):
+    def __init__(self, api, logger, words=None, go_retweet=False):
         self.logger = logger
-        self.words = words
-        self.retweet = retweet
+        self.filter_params = {
+            'words': words,
+            'go_retweet': go_retweet,
+            'is_retweet': False,
+        }
         super(StreamListener, self).__init__(api=api)
 
-    def on_status(self, status):
+    def on_status(self, status, **kwargs):
         thread = Thread(
             target=tweet_processor,
             args=(self.api, status,),
-            kwargs={'words': self.words, 'retweet': self.retweet}
+            kwargs={**self.filter_params, **kwargs}
         )
         thread.start()
 
@@ -54,7 +57,12 @@ class StreamListener(tweepy.StreamListener):
         data = json.loads(raw_data)
         self.logger.debug('raw_data: %s', str(raw_data))
 
-        if 'in_reply_to_status_id' in data:
+        if 'retweeted_status' in data:
+            self.logger.debug('retweet detected')
+            status = Status.parse(self.api, data)
+            if self.on_status(status, is_retweet=True) is False:
+                return False
+        elif 'in_reply_to_status_id' in data:
             status = Status.parse(self.api, data)
             if self.on_status(status) is False:
                 return False
@@ -107,7 +115,7 @@ def get_logger():
 
     return logger
 
-def tweet_processor(api, status, words=None, retweet=False):
+def tweet_processor(api, status, **kwargs):
     logger = logging.getLogger('hdcbot')
 
     try:
@@ -121,14 +129,6 @@ def tweet_processor(api, status, words=None, retweet=False):
         status.user.screen_name,
         status.user.location
     )
-
-    try:
-        retweeted_status = status.retweeted_status
-    except AttributeError:
-        is_retweet = False
-    else:
-        is_retweet = True
-        logger.debug('retweet detected')
 
     if possibly_sensitive:
         logger.debug('sensitive tweet')
@@ -149,18 +149,18 @@ def tweet_processor(api, status, words=None, retweet=False):
     text = status.text.splitlines()
     logger.debug('text: %s,', str(text))
 
-    if words is not None:
+    if kwargs['words'] is not None:
         tweet_words = ' '.join(text).split()
         logger.debug('text: %s,', str(tweet_words))
 
         try:
-            look = words['look']
-        except:
+            look = kwargs['words']['look']
+        except KeyError:
             look = None
 
         try:
-            block = words['block']
-        except:
+            block = kwargs['words']['block']
+        except KeyboardInterrupt:
             block = None
 
         if isinstance(look, list):
@@ -174,10 +174,11 @@ def tweet_processor(api, status, words=None, retweet=False):
                 logger.debug('tweet blocked: %d', status.id)
                 return True
 
-    if (not status.retweeted and not is_retweet and (
-            status.retweet_count > params['min_retweet_count'] and
-            status.user.followers_count > params['min_followers_count'])
-            or retweet):
+    if kwargs['go_retweet'] or (
+            not status.retweeted and
+            not kwargs['is_retweet'] and (
+                status.retweet_count > params['min_retweet_count'] and
+                status.user.followers_count > params['min_followers_count'])):
 
         seconds_to_wait = randint(randint(10, 30), 60 * 3)
         logger.debug(
@@ -376,7 +377,7 @@ def daemon_thread(api, config_file):
             api,
             logger,
             words=words,
-            retweet=params['retweet_tracker']
+            go_retweet=params['retweet_tracker']
         )
     )
     stream_tracker.filter(languages=['es'], track=track, async=True)
@@ -388,7 +389,7 @@ def daemon_thread(api, config_file):
             api,
             logger,
             words=None,
-            retweet=params['retweet_follow']
+            go_retweet=params['retweet_follow']
         )
     )
     stream_watcher.filter(
