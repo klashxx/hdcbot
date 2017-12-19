@@ -54,6 +54,7 @@ class StreamListener(tweepy.StreamListener):
         thread.start()
 
     def on_data(self, raw_data):
+        rate = self.api.rate_limit_status()
         data = json.loads(raw_data)
         self.logger.debug('raw_data: %s', str(raw_data))
 
@@ -63,9 +64,8 @@ class StreamListener(tweepy.StreamListener):
             if self.on_status(status, is_retweet=True) is False:
                 return False
         elif 'in_reply_to_status_id' in data:
-            status = Status.parse(self.api, data)
-            if self.on_status(status) is False:
-                return False
+            self.logger.debug('reply tweet')
+            return True
         elif 'delete' in data:
             delete = data['delete']['status']
             if self.on_delete(delete['id'], delete['user_id']) is False:
@@ -308,7 +308,7 @@ def followers_processor(api, screen_name=None, items_number=5000):
             continue
 
         if (follower.followers_count + params['add_followers_count'] <
-            follower.friends_count):
+            follower.friends_count) and follower.followers_count < 500:
             logger.debug(
                 '%d: not enough friends for %s',
                 follower.friends_count,
@@ -335,14 +335,6 @@ def followers_processor(api, screen_name=None, items_number=5000):
             continue
 
         logger.info('%s followed!', follower.screen_name)
-
-        try:
-            last_tweets = api.user_timeline(user_id=follower.id, count=3)
-        except tweepy.TweepError:
-            continue
-
-        for status in last_tweets:
-            tweet_processor(api, status)
 
     return None
 
