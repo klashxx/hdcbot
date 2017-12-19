@@ -365,6 +365,11 @@ def daemon_thread(api, config_file):
     words = config_file['words']
     follow = config_file['follow']
 
+    try:
+        languages = config_file['languages']
+    except KeyError:
+        languages = None
+
     logger.info('tracking: %s', str(track))
     logger.debug('words: %s', str(words))
     logger.info('follow: %s', str(follow))
@@ -379,7 +384,12 @@ def daemon_thread(api, config_file):
             go_retweet=params['retweet_tracker']
         )
     )
-    stream_tracker.filter(languages=['es'], track=track, async=True)
+
+    if languages is not None:
+        stream_tracker.filter(languages=languages, track=track, async=True)
+    else:
+        stream_tracker.filter(track=track, async=True)
+
 
     logger.info('stream_watcher launched')
     stream_watcher = tweepy.Stream(
