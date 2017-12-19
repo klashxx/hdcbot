@@ -1,1 +1,1 @@
-worker: python hdcbot.py --daemon
+worker: python hdcbot.py --daemon --log=INFO
