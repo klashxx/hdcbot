@@ -10,17 +10,6 @@ params:
   retweet_follow: True
 
 words:
-  look:
-    - almeria
-    - almería
-    - granada
-    - malaga
-    - sevilla
-    - jaen
-    - barcelona
-    - murcia
-    - madrid
-    - españa
   block:
     - sex
     - sexo
@@ -32,14 +21,8 @@ words:
     - coño
 
 track:
-  - running
-  - correr
-  - ciclismo
-  - bici
-  - deporte
-  - strava
-  - nadar
-  - natación
+  - almeria
+  - almería
 
 follow:
   - screen_name: juan_diego
