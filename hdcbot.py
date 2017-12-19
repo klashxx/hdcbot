@@ -65,8 +65,9 @@ class StreamListener(tweepy.StreamListener):
             if self.on_status(status, is_retweet=True) is False:
                 return False
         elif 'in_reply_to_status_id' in data:
-            self.logger.info('reply tweet')
-            return True
+            self.logger.info('in_reply_to_status_id')
+            if self.on_status(status) is False:
+                return False
         elif 'delete' in data:
             delete = data['delete']['status']
             if self.on_delete(delete['id'], delete['user_id']) is False:
