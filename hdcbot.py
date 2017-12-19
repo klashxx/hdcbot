@@ -60,12 +60,12 @@ class StreamListener(tweepy.StreamListener):
         self.logger.debug('raw_data: %s', str(raw_data))
 
         if 'retweeted_status' in data:
-            self.logger.debug('retweet detected')
+            self.logger.info('retweet detected')
             status = Status.parse(self.api, data)
             if self.on_status(status, is_retweet=True) is False:
                 return False
         elif 'in_reply_to_status_id' in data:
-            self.logger.debug('reply tweet')
+            self.logger.info('reply tweet')
             return True
         elif 'delete' in data:
             delete = data['delete']['status']
@@ -133,11 +133,11 @@ def tweet_processor(api, status, **kwargs):
     )
 
     if possibly_sensitive:
-        logger.debug('sensitive tweet')
+        logger.info('sensitive tweet')
         return True
 
     if status.in_reply_to_screen_name is not None:
-        logger.debug('reply tweet')
+        logger.info('reply tweet')
         return True
 
     logger.debug(
@@ -173,7 +173,7 @@ def tweet_processor(api, status, **kwargs):
         if isinstance(block, list):
             if any(w.lower() in [tw.lower() for tw in tweet_words]
                    for w in block):
-                logger.debug('tweet blocked: %d', status.id)
+                logger.info('tweet blocked: %d', status.id)
                 return True
 
     if kwargs['go_retweet'] or (
@@ -183,7 +183,7 @@ def tweet_processor(api, status, **kwargs):
                 status.user.followers_count > params['min_followers_count'])):
 
         seconds_to_wait = randint(randint(10, 30), 60 * 3)
-        logger.debug(
+        logger.info(
             'waiting to retweet id: %d for %d seconds',
             status.id,
             seconds_to_wait
@@ -208,13 +208,13 @@ def tweet_processor(api, status, **kwargs):
                         'unable to retweet %d: %s', status.id, error
                     )
                 else:
-                    logger.debug('already retweeted, id: %d', status.id)
+                    logger.info('already retweeted, id: %d', status.id)
         else:
-            logger.debug('id: %d retweeted!', status.id)
+            logger.info('id: %d retweeted!', status.id)
 
     if not status.favorited:
         seconds_to_wait = randint(randint(10, 30), 60 * 2)
-        logger.debug(
+        logger.info(
             'waiting to favor id: %d for %d seconds',
             status.id,
             seconds_to_wait
@@ -238,9 +238,9 @@ def tweet_processor(api, status, **kwargs):
                         'unable to favor tweet %d: %s', status.id, error
                     )
                 else:
-                    logger.debug('already favorited, id: %d', status.id)
+                    logger.info('already favorited, id: %d', status.id)
         else:
-            logger.debug('id: %d favorited!', status.id)
+            logger.info('id: %d favorited!', status.id)
 
     return True
 
@@ -253,7 +253,7 @@ def unfollower(api, config_file):
     except:
         omit = []
 
-    logger.debug('white list: %s', str(omit))
+    logger.info('white list: %s', str(omit))
 
     friends_ids = api.friends_ids()
 
@@ -300,11 +300,11 @@ def followers_processor(api, screen_name=None, max_batch=None):
                                   id=ref_user.id).items(max_batch):
 
         if follower.following:
-            logger.debug('%s already followed', follower.screen_name)
+            logger.info('%s already followed', follower.screen_name)
             continue
 
         if follower.followers_count < params['min_followers_count']:
-            logger.debug(
+            logger.info(
                 '%d: not enough followers for %s',
                 follower.followers_count,
                 follower.screen_name
@@ -314,7 +314,7 @@ def followers_processor(api, screen_name=None, max_batch=None):
         if ((follower.followers_count + params['add_followers_count'] <
              follower.friends_count) and
                 follower.followers_count < params['min_followers_extended']):
-            logger.debug(
+            logger.info(
                 '%d: not enough friends for %s',
                 follower.friends_count,
                 follower.screen_name
@@ -330,7 +330,7 @@ def followers_processor(api, screen_name=None, max_batch=None):
 
         if batch_count % params['step_batch'] == 0:
             seconds_to_wait = 60 * params['mins_sleep'] * 2
-            logger.debug('batch pause for %d seconds', seconds_to_wait)
+            logger.info('batch pause for %d seconds', seconds_to_wait)
             time.sleep(seconds_to_wait)
 
         try:
