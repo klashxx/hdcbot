@@ -9,7 +9,21 @@ params:
   retweet_tracker: False
   retweet_follow: True
 
+languages:
+  - es
+
 words:
+  look:
+    - almeria
+    - almería
+    - granada
+    - malaga
+    - sevilla
+    - jaen
+    - barcelona
+    - murcia
+    - madrid
+    - españa
   block:
     - sex
     - sexo
@@ -21,15 +35,17 @@ words:
     - coño
 
 track:
-  - almeria
-  - almería
+  - running
+  - correr
+  - ciclismo
+  - bici
+  - deporte
+  - strava
+  - nadar
+  - natación
 
 follow:
   - screen_name: juan_diego
     user_id:     10662422
   - screen_name: HijosDelCid
     user_id:     4901757635
-
-omit:
-  - screen_name: juan_diego
-    user_id:     10662422
