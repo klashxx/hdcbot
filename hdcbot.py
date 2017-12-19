@@ -335,10 +335,8 @@ def daemon_thread(api, config_file):
         auth=api.auth,
         listener=StreamListener(api, logger, words=words, retweet=False)
     )
-    if track[0] == '~':
-        stream_tracker.filter(languages=['es'], async=True)
-    else:
-        stream_tracker.filter(languages=['es'], track=track, async=True)
+
+    stream_tracker.filter(languages=['es'], track=track, async=True)
 
     logger.info('stream_watcher launched')
     stream_watcher = tweepy.Stream(
