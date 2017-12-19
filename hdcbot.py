@@ -86,10 +86,10 @@ def tweet_processor(api, status, words=None, retweet=False):
     try:
         retweeted_status = status.retweeted_status
     except AttributeError:
-        pass
+        is_retweet = False
     else:
+        is_retweet = True
         logger.debug('retweet detected')
-        return True
 
     if possibly_sensitive:
         logger.debug('sensitive tweet')
@@ -135,7 +135,7 @@ def tweet_processor(api, status, words=None, retweet=False):
                 logger.debug('tweet blocked: %d', status.id)
                 return True
 
-    if (not status.retweeted and (
+    if (not status.retweeted and not is_retweet and (
             status.retweet_count > params['min_retweet_count'] and
             status.user.followers_count > params['min_followers_count'])
             or retweet):
