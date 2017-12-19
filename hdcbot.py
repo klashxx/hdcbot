@@ -333,15 +333,24 @@ def daemon_thread(api, config_file):
     logger.info('stream_tracker launched')
     stream_tracker = tweepy.Stream(
         auth=api.auth,
-        listener=StreamListener(api, logger, words=words, retweet=False)
+        listener=StreamListener(
+            api,
+            logger,
+            words=words,
+            retweet=params['retweet_tracker']
+        )
     )
-
     stream_tracker.filter(languages=['es'], track=track, async=True)
 
     logger.info('stream_watcher launched')
     stream_watcher = tweepy.Stream(
         auth=api.auth,
-        listener=StreamListener(api, logger, words=None, retweet=True)
+        listener=StreamListener(
+            api,
+            logger,
+            words=None,
+            retweet=params['retweet_follow']
+        )
     )
     stream_watcher.filter(
         follow=[str(f['user_id']) for f in follow],

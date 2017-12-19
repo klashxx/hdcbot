@@ -4,6 +4,8 @@ params:
   add_followers_count: 300
   mins_sleep: 15
   max_batch: 100
+  retweet_tracker: False
+  retweet_follow: True
 
 words:
   block:
