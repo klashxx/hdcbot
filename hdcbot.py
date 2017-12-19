@@ -66,6 +66,7 @@ class StreamListener(tweepy.StreamListener):
                 return False
         elif 'in_reply_to_status_id' in data:
             self.logger.info('in_reply_to_status_id')
+            status = Status.parse(self.api, data)
             if self.on_status(status) is False:
                 return False
         elif 'delete' in data:
