@@ -1,9 +1,11 @@
 params:
   min_retweet_count: 10
   min_followers_count: 70
+  min_followers_extended: 500
   add_followers_count: 300
   mins_sleep: 15
-  max_batch: 100
+  step_batch: 100
+  max_batch: 300
   retweet_tracker: False
   retweet_follow: True
 

@@ -272,8 +272,11 @@ def unfollower(api, config_file):
 
     return None
 
-def followers_processor(api, screen_name=None, items_number=5000):
+def followers_processor(api, screen_name=None, max_batch=None):
     logger = logging.getLogger('hdcbot')
+    if max_batch is None:
+        max_batch = params['max_batch']
+
     batch_count = 0
 
     if screen_name is None or screen_name == 'me':
@@ -291,12 +294,11 @@ def followers_processor(api, screen_name=None, items_number=5000):
         ref_user.followers_count
     )
 
-    for follower in tweepy.Cursor(
-        api.followers,
-        id=ref_user.id).items(items_number):
+    for follower in tweepy.Cursor(api.followers,
+                                  id=ref_user.id).items(max_batch):
 
         if follower.following:
-            logger.debug('%s already followed', follower.screen_name )
+            logger.debug('%s already followed', follower.screen_name)
             continue
 
         if follower.followers_count < params['min_followers_count']:
@@ -307,8 +309,9 @@ def followers_processor(api, screen_name=None, items_number=5000):
             )
             continue
 
-        if (follower.followers_count + params['add_followers_count'] <
-            follower.friends_count) and follower.followers_count < 500:
+        if ((follower.followers_count + params['add_followers_count'] <
+             follower.friends_count) and
+                follower.followers_count < params['min_followers_extended']):
             logger.debug(
                 '%d: not enough friends for %s',
                 follower.friends_count,
@@ -323,7 +326,7 @@ def followers_processor(api, screen_name=None, items_number=5000):
             batch_count
         )
 
-        if batch_count % params['max_batch'] == 0:
+        if batch_count % params['step_batch'] == 0:
             seconds_to_wait = 60 * params['mins_sleep'] * 2
             logger.debug('batch pause for %d seconds', seconds_to_wait)
             time.sleep(seconds_to_wait)
