@@ -59,6 +59,13 @@ class StreamListener(tweepy.StreamListener):
         data = json.loads(raw_data)
         self.logger.debug('raw_data: %s', str(raw_data))
 
+        data['tweet_text'] = data['text']
+        if 'extended_tweet' in data:
+            try:
+                data['tweet_text'] = data['extended_tweet']['full_text']
+            except KeyError:
+                pass
+
         if 'retweeted_status' in data:
             self.logger.info('retweet detected')
             status = Status.parse(self.api, data)
@@ -150,7 +157,7 @@ def tweet_processor(api, status, **kwargs):
         status.favorite_count
     )
 
-    text = status.text.splitlines()
+    text = status.tweet_text.splitlines()
     logger.debug('text: %s,', str(text))
 
     if kwargs['words'] is not None:
