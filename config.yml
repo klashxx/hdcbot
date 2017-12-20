@@ -9,21 +9,7 @@ params:
   retweet_tracker: False
   retweet_follow: True
 
-languages:
-  - es
-
 words:
-  look:
-    - almeria
-    - almería
-    - granada
-    - malaga
-    - sevilla
-    - jaen
-    - barcelona
-    - murcia
-    - madrid
-    - españa
   block:
     - sex
     - sexo
@@ -35,17 +21,19 @@ words:
     - coño
 
 track:
-  - running
-  - correr
-  - ciclismo
-  - bici
-  - deporte
-  - strava
-  - nadar
-  - natación
+  - almería
+  - almeria
+  - garrucha
+  - roquetas
 
 follow:
-  - screen_name: juan_diego
-    user_id:     10662422
+  - screen_name: lavozdealmeria
+    user_id:     258292587
+  - screen_name: ideal_almeria
+    user_id:     193627515
+  - screen_name: DiarioDAlmeria
+    user_id:     206254639
+  - screen_name: aytoalm
+    user_id:     1267119318
   - screen_name: HijosDelCid
     user_id:     4901757635
