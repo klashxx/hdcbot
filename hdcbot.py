@@ -39,6 +39,7 @@ CONFIG = './config.yml'
 class StreamListener(tweepy.StreamListener):
     def __init__(self, api, logger, words=None, go_retweet=False):
         self.logger = logger
+        self.my_screen_name = api.me().screen_name
         self.filter_params = {
             'words': words,
             'go_retweet': go_retweet,
@@ -57,9 +58,12 @@ class StreamListener(tweepy.StreamListener):
     def on_data(self, raw_data):
         rate = self.api.rate_limit_status()
         data = json.loads(raw_data)
-        self.logger.debug('raw_data: %s', str(raw_data))
+
+        if self.my_screen_name == data['user']['screen_name']:
+            return True
 
         data['tweet_text'] = data['text']
+
         if 'extended_tweet' in data:
             try:
                 data['tweet_text'] = data['extended_tweet']['full_text']
