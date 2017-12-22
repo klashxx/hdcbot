@@ -56,6 +56,7 @@ class StreamListener(tweepy.StreamListener):
 
     def on_data(self, raw_data):
         rate = self.api.rate_limit_status()
+        self.logger.info(rate)
         data = json.loads(raw_data)
         self.logger.debug('raw_data: %s', str(raw_data))
 
