@@ -205,12 +205,12 @@ def tweet_processor(api, status, **kwargs):
                 logger.info('tweet blocked: %d', status.id)
                 return True
 
-    if retweet_counter < params['max_dairy_retweet'] and (
+    if (retweet_counter < params['max_dairy_retweet'] and (
             kwargs['go_retweet'] or (
                 not status.retweeted and
                 not kwargs['is_retweet'] and (
                     status.retweet_count > params['min_retweet_count'] and
-                status.user.followers_count > params['min_followers_count']))):
+                status.user.followers_count > params['min_followers_count'])))):
 
         seconds_to_wait = randint(randint(10, 30), 60 * 3)
         logger.info(
