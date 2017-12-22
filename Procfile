@@ -1,1 +1,1 @@
-worker: python HijosDelCid.yml hdcbot.py --daemon --log=DEBUG
+worker: python hdcbot.py HijosDelCid.yml --daemon --log=DEBUG
