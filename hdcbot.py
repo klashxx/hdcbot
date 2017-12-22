@@ -205,11 +205,12 @@ def tweet_processor(api, status, **kwargs):
                 logger.info('tweet blocked: %d', status.id)
                 return True
 
-    if kwargs['go_retweet'] or (
-            not status.retweeted and
-            not kwargs['is_retweet'] and (
-                status.retweet_count > params['min_retweet_count'] and
-                status.user.followers_count > params['min_followers_count'])):
+    if retweet_counter < params['max_dairy_retweet'] and (
+            kwargs['go_retweet'] or (
+                not status.retweeted and
+                not kwargs['is_retweet'] and (
+                    status.retweet_count > params['min_retweet_count'] and
+                status.user.followers_count > params['min_followers_count']))):
 
         seconds_to_wait = randint(randint(10, 30), 60 * 3)
         logger.info(
@@ -244,7 +245,7 @@ def tweet_processor(api, status, **kwargs):
             logger.info('id: %d retweeted!', status.id)
             retweet_counter += 1
 
-    if not status.favorited:
+    if likes_counter < params['max_dairy_likes'] and not status.favorited:
         seconds_to_wait = randint(randint(10, 30), 60 * 2)
         logger.info(
             'waiting to favor id: %d for %d seconds',
