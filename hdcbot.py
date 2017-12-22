@@ -34,6 +34,7 @@ from tweepy.utils import import_simplejson
 
 json = import_simplejson()
 
+VERSION = '0.2'
 CONFIG = './config.yml'
 
 
@@ -469,4 +470,4 @@ def main(arguments):
     return None
 
 if __name__ == '__main__':
-    main(docopt(__doc__, version='0.1'))
+    main(docopt(__doc__, version=VERSION))
