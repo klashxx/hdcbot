@@ -25,6 +25,8 @@ words:
 track:
   - almeria correr
   - almería correr
+  - almería lotería
+  - almeria loteria
 
 follow:
   - screen_name: lavozdealmeria
@@ -35,7 +37,5 @@ follow:
     user_id:     206254639
   - screen_name: aytoalm
     user_id:     1267119318
-  - screen_name: HijosDelCid
-    user_id:     4901757635
   - screen_name: HackLabAl
     user_id:     540757324
