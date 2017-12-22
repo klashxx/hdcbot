@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """hdcbot ...just another tweeter bot.
-
 Usage:
   hdcbot.py [CNF] [options]
-
 Arguments:
   CNF                        config file [default: config.yml]
-
 Options:
   --daemon                   daemonized execution
   --unfollow                 unfollows non followers
@@ -16,17 +13,18 @@ Options:
   --log=<level>              log level [default: DEBUG]
   --version                  show program's version number and exit
   -h, --help                 show this help message and exit
-
 """
 
 import logging
 import os
 import time
+from pprint import pformat
 from random import randint
 from threading import Thread
 
-import tweepy
 import yaml
+
+import tweepy
 from docopt import docopt
 from tweepy.models import Status
 from tweepy.utils import import_simplejson
@@ -56,8 +54,8 @@ class StreamListener(tweepy.StreamListener):
         thread.start()
 
     def on_data(self, raw_data):
-        rate = self.api.rate_limit_status()
         data = json.loads(raw_data)
+<<<<<<< HEAD
 
         if self.my_screen_name == data['user']['screen_name']:
             return True
@@ -65,10 +63,19 @@ class StreamListener(tweepy.StreamListener):
         data['tweet_text'] = data['text']
 
         if 'extended_tweet' in data:
+=======
+
+        if self.my_screen_name == data['user']['screen_name']:
+            return True
+
+        try:
+            data['tweet_text'] = data['extended_tweet']['full_text']
+        except KeyError:
+>>>>>>> d688e769930c9e566e386b9eade3064e8b0e742e
             try:
-                data['tweet_text'] = data['extended_tweet']['full_text']
+                data['tweet_text'] = data['text']
             except KeyError:
-                pass
+                data['tweet_text'] = u''
 
         if 'retweeted_status' in data:
             self.logger.info('retweet detected')
@@ -209,11 +216,13 @@ def tweet_processor(api, status, **kwargs):
             try:
                 error_code = error.args[0][0]['code']
             except TypeError:
+                rate = api.rate_limit_status()
                 logger.error(
-                    '%s, sleeping for %d minutes',
+                    'unable to retweet: %s, sleeping for %d minutes',
                     error,
                     params['mins_sleep']
                 )
+                logger.debug('raw limits: %s', pformat(rate))
                 time.sleep(60 * params['mins_sleep'])
             else:
                 if error_code != 327:
@@ -240,10 +249,13 @@ def tweet_processor(api, status, **kwargs):
             try:
                 error_code = error.args[0][0]['code']
             except TypeError:
+                rate = api.rate_limit_status()
                 logger.error(
-                    '%s, sleeping for %d minutes',
+                    'unable to favorite: %s, sleeping for %d minutes',
                     error,
-                    params['mins_sleep'])
+                    params['mins_sleep']
+                )
+                logger.debug('raw limits: %s', pformat(rate))
                 time.sleep(60 * params['mins_sleep'])
             else:
                 if error_code != 139:
@@ -464,4 +476,4 @@ def main(arguments):
     return None
 
 if __name__ == '__main__':
-     main(docopt(__doc__, version='0.1'))
+    main(docopt(__doc__, version='0.1'))

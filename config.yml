@@ -7,7 +7,7 @@ params:
   step_batch: 100
   max_batch: 300
   retweet_tracker: False
-  retweet_follow: True
+  retweet_follow: False
 
 words:
   block:
@@ -21,9 +21,8 @@ words:
     - coño
 
 track:
-  - almería
-  - almeria
-  - almeriense
+  - almeria correr
+  - almería correr
 
 follow:
   - screen_name: lavozdealmeria
