@@ -22,6 +22,7 @@ Options:
 import logging
 import os
 import time
+from pprint import pformat
 from random import randint
 from threading import Thread
 
@@ -56,7 +57,6 @@ class StreamListener(tweepy.StreamListener):
         thread.start()
 
     def on_data(self, raw_data):
-        rate = self.api.rate_limit_status()
         data = json.loads(raw_data)
 
         if self.my_screen_name == data['user']['screen_name']:
@@ -209,11 +209,13 @@ def tweet_processor(api, status, **kwargs):
             try:
                 error_code = error.args[0][0]['code']
             except TypeError:
+                rate = api.rate_limit_status()
                 logger.error(
-                    '%s, sleeping for %d minutes',
+                    'unable to retweet: %s, sleeping for %d minutes',
                     error,
                     params['mins_sleep']
                 )
+                logger.debug('raw limits: %s', pformat(rate))
                 time.sleep(60 * params['mins_sleep'])
             else:
                 if error_code != 327:
@@ -240,10 +242,13 @@ def tweet_processor(api, status, **kwargs):
             try:
                 error_code = error.args[0][0]['code']
             except TypeError:
+                rate = api.rate_limit_status()
                 logger.error(
-                    '%s, sleeping for %d minutes',
+                    'unable to favorite: %s, sleeping for %d minutes',
                     error,
-                    params['mins_sleep'])
+                    params['mins_sleep']
+                )
+                logger.debug('raw limits: %s', pformat(rate))
                 time.sleep(60 * params['mins_sleep'])
             else:
                 if error_code != 139:
