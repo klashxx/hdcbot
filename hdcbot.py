@@ -22,6 +22,7 @@ Options:
 import logging
 import os
 import time
+from datetime import datetime
 from pprint import pformat
 from random import randint
 from threading import Thread
@@ -35,6 +36,7 @@ from tweepy.utils import import_simplejson
 json = import_simplejson()
 likes_counter = 0
 retweet_counter = 0
+utc_date = datetime.utcnow().strftime('%Y%m%d')
 
 VERSION = '0.2'
 CONFIG = './config.yml'
@@ -138,6 +140,14 @@ def tweet_processor(api, status, **kwargs):
 
     global retweet_counter
     global likes_counter
+    global utc_date
+
+    current_utc_date = datetime.utcnow().strftime('%Y%m%d')
+    if current_utc_date != utc_date:
+        likes_counter = 0
+        retweet_counter = 0
+        utc_date = current_utc_date
+        logger.info('new utc: %s counter initialization!', utc_date)
 
     try:
         possibly_sensitive = status.possibly_sensitive
