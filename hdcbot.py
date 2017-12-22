@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """hdcbot ...just another tweeter bot.
+
 Usage:
   hdcbot.py [CNF] [options]
+
 Arguments:
   CNF                        config file [default: config.yml]
+
 Options:
   --daemon                   daemonized execution
   --unfollow                 unfollows non followers
@@ -13,24 +16,29 @@ Options:
   --log=<level>              log level [default: DEBUG]
   --version                  show program's version number and exit
   -h, --help                 show this help message and exit
+
 """
 
 import logging
 import os
 import time
+from datetime import datetime
 from pprint import pformat
 from random import randint
 from threading import Thread
 
-import yaml
-
 import tweepy
+import yaml
 from docopt import docopt
 from tweepy.models import Status
 from tweepy.utils import import_simplejson
 
 json = import_simplejson()
+likes_counter = 0
+retweet_counter = 0
+utc_date = datetime.utcnow().strftime('%Y%m%d')
 
+VERSION = '0.2'
 CONFIG = './config.yml'
 
 
@@ -55,15 +63,6 @@ class StreamListener(tweepy.StreamListener):
 
     def on_data(self, raw_data):
         data = json.loads(raw_data)
-<<<<<<< HEAD
-
-        if self.my_screen_name == data['user']['screen_name']:
-            return True
-
-        data['tweet_text'] = data['text']
-
-        if 'extended_tweet' in data:
-=======
 
         if self.my_screen_name == data['user']['screen_name']:
             return True
@@ -71,7 +70,6 @@ class StreamListener(tweepy.StreamListener):
         try:
             data['tweet_text'] = data['extended_tweet']['full_text']
         except KeyError:
->>>>>>> d688e769930c9e566e386b9eade3064e8b0e742e
             try:
                 data['tweet_text'] = data['text']
             except KeyError:
@@ -140,6 +138,17 @@ def get_logger(log_level):
 def tweet_processor(api, status, **kwargs):
     logger = logging.getLogger('hdcbot')
 
+    global retweet_counter
+    global likes_counter
+    global utc_date
+
+    current_utc_date = datetime.utcnow().strftime('%Y%m%d')
+    if current_utc_date != utc_date:
+        likes_counter = 0
+        retweet_counter = 0
+        utc_date = current_utc_date
+        logger.info('new utc: %s counter initialization!', utc_date)
+
     try:
         possibly_sensitive = status.possibly_sensitive
     except AttributeError:
@@ -196,11 +205,12 @@ def tweet_processor(api, status, **kwargs):
                 logger.info('tweet blocked: %d', status.id)
                 return True
 
-    if kwargs['go_retweet'] or (
-            not status.retweeted and
-            not kwargs['is_retweet'] and (
-                status.retweet_count > params['min_retweet_count'] and
-                status.user.followers_count > params['min_followers_count'])):
+    if retweet_counter < params['max_dairy_retweet'] and (
+            kwargs['go_retweet'] or (
+                not status.retweeted and
+                not kwargs['is_retweet'] and (
+                    status.retweet_count > params['min_retweet_count'] and
+                status.user.followers_count > params['min_followers_count']))):
 
         seconds_to_wait = randint(randint(10, 30), 60 * 3)
         logger.info(
@@ -233,8 +243,9 @@ def tweet_processor(api, status, **kwargs):
                     logger.info('already retweeted, id: %d', status.id)
         else:
             logger.info('id: %d retweeted!', status.id)
+            retweet_counter += 1
 
-    if not status.favorited:
+    if likes_counter < params['max_dairy_likes'] and not status.favorited:
         seconds_to_wait = randint(randint(10, 30), 60 * 2)
         logger.info(
             'waiting to favor id: %d for %d seconds',
@@ -266,6 +277,7 @@ def tweet_processor(api, status, **kwargs):
                     logger.info('already favorited, id: %d', status.id)
         else:
             logger.info('id: %d favorited!', status.id)
+            likes_counter += 1
 
     return True
 
@@ -476,4 +488,4 @@ def main(arguments):
     return None
 
 if __name__ == '__main__':
-    main(docopt(__doc__, version='0.1'))
+    main(docopt(__doc__, version=VERSION))
