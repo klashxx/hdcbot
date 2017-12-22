@@ -62,13 +62,13 @@ class StreamListener(tweepy.StreamListener):
         if self.my_screen_name == data['user']['screen_name']:
             return True
 
-        data['tweet_text'] = data['text']
-
-        if 'extended_tweet' in data:
+        try:
+            data['tweet_text'] = data['extended_tweet']['full_text']
+        except KeyError:
             try:
-                data['tweet_text'] = data['extended_tweet']['full_text']
+                data['tweet_text'] = data['text']
             except KeyError:
-                pass
+                data['tweet_text'] = u''
 
         if 'retweeted_status' in data:
             self.logger.info('retweet detected')
@@ -464,4 +464,4 @@ def main(arguments):
     return None
 
 if __name__ == '__main__':
-     main(docopt(__doc__, version='0.1'))
+    main(docopt(__doc__, version='0.1'))
