@@ -33,6 +33,8 @@ from tweepy.models import Status
 from tweepy.utils import import_simplejson
 
 json = import_simplejson()
+likes_counter = 0
+retweet_counter = 0
 
 VERSION = '0.2'
 CONFIG = './config.yml'
@@ -134,6 +136,9 @@ def get_logger(log_level):
 def tweet_processor(api, status, **kwargs):
     logger = logging.getLogger('hdcbot')
 
+    global retweet_counter
+    global likes_counter
+
     try:
         possibly_sensitive = status.possibly_sensitive
     except AttributeError:
@@ -227,6 +232,7 @@ def tweet_processor(api, status, **kwargs):
                     logger.info('already retweeted, id: %d', status.id)
         else:
             logger.info('id: %d retweeted!', status.id)
+            retweet_counter += 1
 
     if not status.favorited:
         seconds_to_wait = randint(randint(10, 30), 60 * 2)
@@ -260,6 +266,7 @@ def tweet_processor(api, status, **kwargs):
                     logger.info('already favorited, id: %d', status.id)
         else:
             logger.info('id: %d favorited!', status.id)
+            likes_counter += 1
 
     return True
 
