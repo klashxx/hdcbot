@@ -462,6 +462,8 @@ def main(arguments):
     screen_name = arguments['--getid']
     log_level = arguments['--log']
 
+    print (arguments)
+
     try:
         config_file = get_config(config)
     except FileNotFoundError:
@@ -472,6 +474,7 @@ def main(arguments):
     params = config_file['params']
 
     api = get_api(get_logger(log_level))
+    return None
 
     if screen_name is not None:
         get_user(api, screen_name)
